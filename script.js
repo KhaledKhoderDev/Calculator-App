@@ -24,15 +24,45 @@ let isAfterEquals = false;
 
 const resultElement = document.querySelector('.calc__result');
 const keyElements = document.querySelectorAll('.calc__key');
+const getDisplayExpression = () => {
+  if (storedNumber === 'Error') {
+    return 'Error';
+  }
 
+  if (isAfterEquals) {
+    return `${storedNumber}`;
+  }
+
+  let expression = '';
+  if (storedNumber) {
+    expression += storedNumber;
+  }
+
+  if (operation) {
+    expression += `${operation}`;
+  }
+
+  if (currentNumber) {
+    expression += currentNumber;
+  }
+  return expression.trim() || '0';
+};
 const updateScreen = value => {
-  resultElement.innerText = value ? value : '0';
+  resultElement.innerText = getDisplayExpression();
 };
 
 const numberButtonHandler = value => {
-  if (isAfterEquals || storedNumber === 'Error') {
+  if (isAfterEquals) {
     storedNumber = '';
+    currentNumber = '';
+    operation = '';
     isAfterEquals = false;
+  }
+
+  if (storedNumber === 'Error') {
+    storedNumber = '';
+    currentNumber = '';
+    operation = '';
   }
 
   if (value === '.' && currentNumber.includes('.')) {
@@ -45,7 +75,7 @@ const numberButtonHandler = value => {
     currentNumber += value;
   }
 
-  updateScreen(currentNumber);
+  updateScreen();
 };
 
 const resetButtonHandler = () => {
@@ -53,10 +83,14 @@ const resetButtonHandler = () => {
   currentNumber = '';
   operation = '';
   isAfterEquals = false;
-  updateScreen(currentNumber);
+  updateScreen();
 };
 
 const deleteButtonHandler = () => {
+  if (isAfterEquals) {
+    resetButtonHandler();
+    return;
+  }
   if (!currentNumber || currentNumber === '0') return;
 
   if (currentNumber.length === 1) {
@@ -65,7 +99,7 @@ const deleteButtonHandler = () => {
     currentNumber = currentNumber.substring(0, currentNumber.length - 1);
   }
 
-  updateScreen(currentNumber);
+  updateScreen();
 };
 
 const executeOperation = () => {
@@ -92,28 +126,41 @@ const executeOperation = () => {
         }
         break;
     }
+
+    operation = '';
     currentNumber = '';
-    updateScreen(storedNumber);
     isAfterEquals = true;
+    updateScreen();
   }
 };
 
 const operationButtonHandler = operationValue => {
   if (storedNumber === 'Error') {
-    updateScreen('Error');
+    updateScreen('');
     return;
   }
-  if (isAfterEquals) isAfterEquals = false;
+  if (isAfterEquals) {
+    currentNumber = '';
+    operation = operationValue;
+    isAfterEquals = false;
+    updateScreen();
+  }
   if (!storedNumber && !currentNumber) return;
 
   if (currentNumber && !storedNumber) {
     storedNumber = currentNumber;
     currentNumber = '';
     operation = operationValue;
+    updateScreen();
   } else if (storedNumber) {
     operation = operationValue;
+    updateScreen();
 
-    if (currentNumber) executeOperation();
+    if (currentNumber) {
+      executeOperation();
+      operation = operationValue;
+      updateScreen();
+    }
   }
 };
 keyElements.forEach(element => {
