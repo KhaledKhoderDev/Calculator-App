@@ -1,138 +1,182 @@
-// Light/Dark themes
-const toggleElement = document.querySelector(".themes__toggle");
+// Light/Dark Mode
+const toggleElement = document.querySelector('.themes__toggle');
 
-const toggleDarkTheme = () => toggleElement.classList.toggle("themes__toggle--isActive");
+const toggleTheme = () => {
+  toggleElement.classList.toggle('themes__toggle--isActive');
+  toggleElement.setAttribute(
+    'aria-pressed',
+    toggleElement.classList.contains('themes__toggle--isActive'),
+  );
+};
 
-toggleElement.addEventListener("keydown", event => event.key === "Enter" && toggleDarkTheme())
-toggleElement.addEventListener("click", toggleDarkTheme);
+const toggleThemeAccessibility = event => {
+  event.key === 'Enter' && toggleTheme();
+};
 
-// create logic for calculator
+toggleElement.addEventListener('keydown', toggleThemeAccessibility);
+toggleElement.addEventListener('click', toggleTheme);
+
+// Logic for calculator
+let storedNumber = '';
+let currentNumber = '';
+let operation = '';
+let isAfterEquals = false;
+
 const resultElement = document.querySelector('.calc__result');
-const keyElements = document.querySelectorAll("[data-type]");
+const keyElements = document.querySelectorAll('.calc__key');
 
-let storedNumber = "";
-let currentNumber = "";
-let operation = "";
+const updateScreen = value => {
+  resultElement.innerText = value ? value : '0';
+};
 
-const numberButtonHandler = (value) => {
-  if (value === "." && currentNumber.includes(".")) return;
-  if (value === "0" && !currentNumber) return;
+const numberButtonHandler = value => {
+  if (isAfterEquals || storedNumber === 'Error') {
+    storedNumber = '';
+    isAfterEquals = false;
+  }
 
-  currentNumber = currentNumber + value;
+  if (value === '.' && currentNumber.includes('.')) {
+    return;
+  }
+
+  if (currentNumber === '0' && value !== '.') {
+    currentNumber = value;
+  } else {
+    currentNumber += value;
+  }
+
   updateScreen(currentNumber);
-}
-
-const updateScreen = (value) => {
-  resultElement.innerText = !value ? "0" : value;
-}
+};
 
 const resetButtonHandler = () => {
-  storedNumber = "";
-  currentNumber = "";
+  storedNumber = '';
+  currentNumber = '';
+  operation = '';
+  isAfterEquals = false;
   updateScreen(currentNumber);
-}
+};
 
 const deleteButtonHandler = () => {
-  if (!currentNumber) return;
-
-  if (currentNumber === "0") return;
+  if (!currentNumber || currentNumber === '0') return;
 
   if (currentNumber.length === 1) {
-    currentNumber = "";
+    currentNumber = '';
   } else {
     currentNumber = currentNumber.substring(0, currentNumber.length - 1);
   }
 
   updateScreen(currentNumber);
-}
+};
 
 const executeOperation = () => {
+  if (storedNumber === 'Error') {
+    updateScreen('Error');
+    return;
+  }
   if (currentNumber && storedNumber && operation) {
     switch (operation) {
-      case "+":
+      case '+':
         storedNumber = parseFloat(storedNumber) + parseFloat(currentNumber);
-        currentNumber = "";
-        updateScreen(storedNumber);
         break;
-      case "-":
+      case '-':
         storedNumber = parseFloat(storedNumber) - parseFloat(currentNumber);
-        currentNumber = "";
-        updateScreen(storedNumber);
         break;
-      case "*":
+      case '*':
         storedNumber = parseFloat(storedNumber) * parseFloat(currentNumber);
-        currentNumber = "";
-        updateScreen(storedNumber);
         break;
-      case "/":
-        storedNumber = parseFloat(storedNumber) / parseFloat(currentNumber);
-        currentNumber = "";
-        updateScreen(storedNumber);
+      case '/':
+        if (parseFloat(currentNumber) === 0) {
+          storedNumber = 'Error';
+        } else {
+          storedNumber = parseFloat(storedNumber) / parseFloat(currentNumber);
+        }
         break;
     }
+    currentNumber = '';
+    updateScreen(storedNumber);
+    isAfterEquals = true;
   }
-}
+};
 
-const operationButtonHandler = (operationValue) => {
+const operationButtonHandler = operationValue => {
+  if (storedNumber === 'Error') {
+    updateScreen('Error');
+    return;
+  }
+  if (isAfterEquals) isAfterEquals = false;
+  if (!storedNumber && !currentNumber) return;
+
   if (currentNumber && !storedNumber) {
     storedNumber = currentNumber;
-    currentNumber = "";
+    currentNumber = '';
     operation = operationValue;
   } else if (storedNumber) {
     operation = operationValue;
 
     if (currentNumber) executeOperation();
   }
-}
-
-keyElements.forEach(element => element.addEventListener("click", () => {
-  if (element.dataset.type === "number") {
-    numberButtonHandler(element.dataset.value)
-  } else if (element.dataset.type === "operation") {
-    switch (element.dataset.value) {
-      case "c":
-        resetButtonHandler();
-        break;
-      case "Backspace":
-        deleteButtonHandler();
-        break;
-      case "Enter":
-        executeOperation(resultElement);
-        break;
-      default:
-        operationButtonHandler(element.dataset.value);
-    }
-  }
-}));
-
-//  Use keyboard to type
-const availableNumbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "."]
-const availableOperations = ["+", "-", "*", "/"]
-const availableKeys = [...availableNumbers, ...availableOperations, "Backspace", "Enter", "c"];
-
-window.addEventListener("keydown", (event) => {
-  // solution1(event.key);
-  solution2(event.key);
-})
-
-const solution1 = (key) => {
-  if (availableNumbers.includes(key)) {
-    numberButtonHandler(key);
-  } else if (availableOperations.includes(key)) {
-    operationButtonHandler(key);
-  } else if (key === "Backspace") {
-    deleteButtonHandler();
-  } else if (key === "Enter") {
-    executeOperation();
-  }
 };
+keyElements.forEach(element => {
+  element.addEventListener('click', () => {
+    const type = element.dataset.type;
+    if (type === 'number') {
+      numberButtonHandler(element.dataset.value);
+    } else if (type === 'operation') {
+      switch (element.dataset.value) {
+        case 'c':
+          resetButtonHandler();
+          break;
+        case 'Backspace':
+          deleteButtonHandler();
+          break;
+        case 'Enter':
+          executeOperation();
+          break;
+        default:
+          operationButtonHandler(element.dataset.value);
+      }
+    }
+  });
+});
 
-const solution2 = (key) => {
+// use Keyboard as input source
+const availableNumbers = [
+  '0',
+  '1',
+  '2',
+  '3',
+  '4',
+  '5',
+  '6',
+  '7',
+  '8',
+  '9',
+  '.',
+];
+const availableOperations = ['+', '-', '*', '/'];
+const availableKeys = [
+  ...availableNumbers,
+  ...availableOperations,
+  'Enter',
+  'Backspace',
+  'c',
+];
+
+window.addEventListener('keydown', event => {
+  keyboardWithHover(event.key);
+});
+
+const keyboardWithHover = key => {
   if (availableKeys.includes(key)) {
     const elem = document.querySelector(`[data-value="${key}"]`);
 
-    elem.classList.add("hover");
-    elem.click();
-    setTimeout(() => elem.classList.remove("hover"), 100);
+    if (elem) {
+      elem.classList.add('hover');
+      elem.click();
+
+      setTimeout(() => {
+        elem.classList.remove('hover');
+      }, 100);
+    }
   }
-}
+};
