@@ -144,6 +144,7 @@ const operationButtonHandler = operationValue => {
     operation = operationValue;
     isAfterEquals = false;
     updateScreen();
+    return;
   }
   if (!storedNumber && !currentNumber) return;
 
@@ -152,17 +153,19 @@ const operationButtonHandler = operationValue => {
     currentNumber = '';
     operation = operationValue;
     updateScreen();
-  } else if (storedNumber) {
+  }
+
+  if (storedNumber && operation && currentNumber) {
+    executeOperation();
+    operation = operationValue;
+    isAfterEquals = false;
+    updateScreen();
+  } else {
     operation = operationValue;
     updateScreen();
-
-    if (currentNumber) {
-      executeOperation();
-      operation = operationValue;
-      updateScreen();
-    }
   }
 };
+
 keyElements.forEach(element => {
   element.addEventListener('click', () => {
     const type = element.dataset.type;
